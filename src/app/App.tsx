@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Scene } from '../scene/Scene'
+import { HandControl } from '../interaction/HandControl'
 import { applyCommand, initialState, type Command } from '../simulation/engine'
 
 export default function App() {
@@ -43,6 +44,7 @@ export default function App() {
       <button className={'vacuum ' + (state.vacuum ? 'on' : '')} onClick={() => send({type:'vacuum',on:!state.vacuum})}><span><i/> VACUUM</span><strong>{state.vacuum ? 'ON' : 'OFF'} &nbsp; ↗</strong></button>
       <div className="actions"><button className="primary" onClick={() => send({type:'inspect'})}>INSPECT PLACEMENT <span>↗</span></button><button className="reset" onClick={() => send({type:'reset'})}>↺ &nbsp; RESET MISSION</button></div>
       {state.result && <div className={'result ' + (state.result.passed ? 'pass' : 'fail')}><span>PLACEMENT ASSESSMENT</span><h3>{state.result.passed ? 'Placement passed' : 'Placement failed'}</h3><p>{state.result.reason}</p><div>ΔX {state.result.xErrorUm.toFixed(1)} µm &nbsp; · &nbsp; ΔY {state.result.yErrorUm.toFixed(1)} µm &nbsp; · &nbsp; Δθ {state.result.angleErrorDeg.toFixed(1)}°</div></div>}
+      <HandControl send={send} fine={fine}/>
       <div className="keyboard"><b>KEYBOARD SHORTCUTS</b><p>Arrows move XY · W/S raise/lower · Q/E rotate<br/>V vacuum · F precision · C camera · I inspect</p></div>
     </aside></main><footer><span>OPERANT AI &nbsp; / &nbsp; SIMULATION SYSTEMS</span><span>MISSION 001 &nbsp; • &nbsp; DEV DAY EDITION</span></footer>
   </div>
