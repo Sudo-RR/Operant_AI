@@ -25,8 +25,12 @@ The scenario uses illustrative limits: pickup within 150 µm horizontally and 80
 
 ## Implementation and credits
 
-Built for the hackathon with React, TypeScript, Vite, Three.js, React Three Fiber and Drei. All workstation geometry is procedural; no external 3D assets are included. Codex helped implement and integrate the deterministic procedure engine, automated tests, procedural workstation and control interface. The repository's existing MIT license applies to project code; dependencies retain their own licenses. Optional webcam hand control uses MediaPipe Hand Landmarker; its model and runtime load from Google and jsDelivr when enabled. Camera frames are processed in the browser. A demo recording is not included.
+Built for the hackathon with React, TypeScript, Vite, Three.js, React Three Fiber and Drei. All workstation geometry is procedural; no external 3D assets are included. Codex helped implement and integrate the deterministic procedure engine, automated tests, procedural workstation and control interface. The repository's existing MIT license applies to project code; dependencies retain their own licenses. Optional webcam hand control uses MediaPipe Hand Landmarker; its model loads from Google when enabled; its runtime is bundled locally. Camera frames are processed in the browser. A demo recording is not included.
 
 ## Optional webcam control
 
-Click **Start camera**, allow camera access in your browser, and hold one hand in view. Pinch thumb and index finger together and move your hand to move the tool in X/Y; release the pinch to stop. Fine mode reduces movement sensitivity. Use the on-screen controls for Z, rotation and vacuum. Stop the camera when finished. This feature needs internet access to load the MediaPipe runtime and model; the rest of the simulator works without it.
+Click **Start camera** and allow camera access. The browser asks for permission before downloading the model. After it loads, show an open hand to arm the control, then pinch thumb and index finger together and move your hand to move the tool in X/Y. Release the pinch to stop. If tracking is lost, open your hand and make a fresh pinch before moving again. A pen can be held as a visual aid, but the camera tracks the fingers, not the pen.
+
+Choose **Manual XY** or **Hand XY** to switch input without resetting the mission. Fine mode and the sensitivity slider control gesture speed. Use the on-screen or keyboard controls for Z, rotation and vacuum. Pinch release never toggles vacuum. Stop the camera when finished. Video frames and landmarks remain in the browser; only the model is downloaded. The webcam does not measure real-world micrometre movements.
+
+The microscope magnification and illumination sliders are simulated optical controls. The model and geometry are illustrative, not a representation of a certified instrument.

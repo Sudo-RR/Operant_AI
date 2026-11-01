@@ -6,16 +6,16 @@ import type { SimulationState } from '../simulation/engine'
 
 export type CameraMode = 'workstation' | 'microscope'
 
-type SceneProps = { state: SimulationState; camera: CameraMode }
+type SceneProps = { state: SimulationState; camera: CameraMode; magnification: number; illumination: number }
 
-function CameraRig({ mode }: { mode: CameraMode }) {
+function CameraRig({ mode, magnification }: { mode: CameraMode; magnification: number }) {
   const { camera, size } = useThree()
   useEffect(() => {
     if (mode === 'microscope') {
       camera.position.set(4, 18, 0.001)
       camera.up.set(0, 0, -1)
       camera.lookAt(4, 0, 0)
-      if (camera instanceof ThreeOrthographicCamera) camera.zoom = Math.min(size.width, size.height) / 7
+      if (camera instanceof ThreeOrthographicCamera) camera.zoom = Math.min(size.width, size.height) / 7 * magnification
     } else {
       camera.position.set(17, 19, 23)
       camera.up.set(0, 1, 0)
@@ -23,7 +23,7 @@ function CameraRig({ mode }: { mode: CameraMode }) {
       if (camera instanceof ThreeOrthographicCamera) camera.zoom = Math.min(size.width, size.height) / 23
     }
     if (camera instanceof ThreeOrthographicCamera) camera.updateProjectionMatrix()
-  }, [camera, mode, size])
+  }, [camera, mode, size, magnification])
   return null
 }
 
@@ -64,8 +64,34 @@ function Station() {
       <Box position={[0,0,0]} size={[0.3,0.008,0.025]} color="#8d7652" metalness={0.6} />
       <Box position={[0,0,0]} size={[0.025,0.008,0.3]} color="#8d7652" metalness={0.6} />
     </group>))}
+    {/* Fine bond pads, traces and vias on the ceramic carrier. */}
+    {Array.from({length: 10}, (_, i) => {
+      const offset = -0.9 + i * 0.2
+      return <group key={i}>
+        {[-1,1].map(side => <group key={side}>
+          <Box position={[4+offset,0.408,side*1.35]} size={[0.09,0.008,0.24]} color="#b9a47b" metalness={0.72} roughness={0.35}/>
+          <Box position={[4+offset,0.407,side*1.82]} size={[0.015,0.006,0.72]} color="#a99773" metalness={0.65} roughness={0.45}/>
+          <Box position={[4+side*1.35,0.408,offset]} size={[0.24,0.008,0.09]} color="#b9a47b" metalness={0.72} roughness={0.35}/>
+          <Box position={[4+side*1.82,0.407,offset]} size={[0.72,0.006,0.015]} color="#a99773" metalness={0.65} roughness={0.45}/>
+        </group>)}
+      </group>
+    })}
+    {[-2.05,2.05].flatMap(x=>[-2.05,2.05].map(z=><mesh key={x+':'+z} position={[4+x,0.41,z]} rotation={[-Math.PI/2,0,0]}><ringGeometry args={[0.035,0.065,20]}/><meshStandardMaterial color="#9a8661" metalness={0.7} roughness={0.4}/></mesh>))}
     {/* Illustrative, low-profile epoxy deposit */}
-    <mesh position={[4, 0.404, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.58, 48]} /><meshStandardMaterial color="#b39c76" roughness={0.42} transparent opacity={0.65} /></mesh>
+    <mesh position={[4, 0.406, 0]} scale={[1,0.04,1]}><sphereGeometry args={[0.58,48,24,0,Math.PI*2,0,Math.PI/2]} /><meshStandardMaterial color="#bba982" roughness={0.32} metalness={0.05} transparent opacity={0.78} /></mesh>
+  </group>
+}
+
+
+function MicroscopeStand() {
+  return <group>
+    <Box position={[8.8,1.7,-5.9]} size={[1.1,4.2,1.1]} color="#626d6d" metalness={0.75} roughness={0.35}/>
+    <Box position={[6.3,3.7,-5.9]} size={[5.8,0.65,1.3]} color="#899391" metalness={0.75} roughness={0.35}/>
+    <Box position={[4,3.7,-3.2]} size={[1.3,0.65,6]} color="#899391" metalness={0.75} roughness={0.35}/>
+    <mesh position={[4,3.2,0]} castShadow><cylinderGeometry args={[0.85,0.7,0.8,48]}/><meshStandardMaterial color="#343e41" metalness={0.78} roughness={0.32}/></mesh>
+    <mesh position={[4,2.65,0]} castShadow><cylinderGeometry args={[0.7,0.42,0.5,48]}/><meshStandardMaterial color="#aeb6b2" metalness={0.82} roughness={0.25}/></mesh>
+    <mesh position={[4,2.38,0]}><cylinderGeometry args={[0.42,0.42,0.08,40]}/><meshStandardMaterial color="#303b3d" metalness={0.65} roughness={0.32}/></mesh>
+    {[-1,1].map(x=><group key={x} position={[4+x*0.65,3.7,-3.6]} rotation={[0,0,Math.PI/2]}><mesh><cylinderGeometry args={[0.43,0.43,0.22,32]}/><meshStandardMaterial color="#303a3b" metalness={0.7} roughness={0.4}/></mesh><mesh position={[0,0.13,0]}><cylinderGeometry args={[0.31,0.31,0.05,32]}/><meshStandardMaterial color="#aab3ad" metalness={0.8} roughness={0.3}/></mesh></group>)}
   </group>
 }
 
@@ -101,19 +127,22 @@ function Nozzle({ state }: { state: SimulationState }) {
     <mesh position={[0, 0.035, 0]} castShadow><cylinderGeometry args={[0.14, 0.14, 0.07, 32]} /><meshStandardMaterial color="#31393b" metalness={0.5} roughness={0.48} /></mesh>
     <mesh position={[0, 1.6, 0]} castShadow><cylinderGeometry args={[0.38, 0.32, 2.15, 32]} /><meshStandardMaterial color="#8d989c" metalness={0.9} roughness={0.3} /></mesh>
     <mesh position={[0, 2.55, 0]} castShadow><cylinderGeometry args={[0.49, 0.49, 0.25, 32]} /><meshStandardMaterial color="#4b565a" metalness={0.85} roughness={0.34} /></mesh>
+    <mesh position={[0, 3.1, 0]} castShadow><cylinderGeometry args={[0.5,0.42,1,48]}/><meshStandardMaterial color="#3c4749" metalness={0.68} roughness={0.4}/></mesh>
+    {[2.78,2.9,3.02,3.14,3.26,3.38,3.5].map(y=><mesh key={y} position={[0,y,0]}><torusGeometry args={[0.49,0.025,8,48]}/><meshStandardMaterial color="#a1a8a3" metalness={0.8} roughness={0.35}/></mesh>)}
+    <mesh position={[0,3.68,0]}><cylinderGeometry args={[0.36,0.5,0.3,40]}/><meshStandardMaterial color="#7b8685" metalness={0.8} roughness={0.3}/></mesh>
   </group>
 }
 
-export function Scene({ state, camera }: SceneProps) {
+export function Scene({ state, camera, magnification, illumination }: SceneProps) {
   return <Canvas shadows dpr={[1, 2]} gl={{ antialias: true }} style={{ width: '100%', height: '100%' }}>
     <color attach="background" args={['#242c30']} />
     <OrthographicCamera makeDefault position={[17, 19, 23]} near={0.1} far={120} />
-    <CameraRig mode={camera} />
-    <ambientLight intensity={0.85} />
+    <CameraRig mode={camera} magnification={magnification} />
+    <ambientLight intensity={0.85 * illumination} />
     <hemisphereLight args={['#e9f1f2', '#54514a', 1.15]} />
-    <directionalLight position={[-5, 16, 9]} intensity={2.5} castShadow shadow-mapSize={[2048, 2048]} shadow-camera-left={-15} shadow-camera-right={15} shadow-camera-top={15} shadow-camera-bottom={-15} shadow-bias={-0.0001} />
+    <directionalLight position={[-5, 16, 9]} intensity={2.5 * illumination} castShadow shadow-mapSize={[2048, 2048]} shadow-camera-left={-15} shadow-camera-right={15} shadow-camera-top={15} shadow-camera-bottom={-15} shadow-bias={-0.0001} />
     <directionalLight position={[10, 8, -8]} intensity={0.7} color="#d5e1e5" />
-    <Station /><Die state={state} /><Nozzle state={state} />
+    <Station />{camera === 'workstation' && <MicroscopeStand />}<Die state={state} /><Nozzle state={state} />
     <ContactShadows position={[0, -1.82, 0]} opacity={0.3} scale={30} blur={2.2} far={4} />
   </Canvas>
 }
