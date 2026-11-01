@@ -8,3 +8,4 @@
 .preview-frame{position:relative;line-height:0;background:#101918}.preview-frame canvas{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1);pointer-events:none}.preview-bar>div{display:flex;gap:4px}.floating-preview .hand-status{line-height:1.4}
 .floating-preview video{max-height:none}
 .clutch-selector>span{font:9px 'IBM Plex Mono',monospace;color:#9fb2a8;letter-spacing:.05em}
+.top-actions{display:flex;align-items:center;gap:20px}.fullscreen-button{border:1px solid #526c60;background:#1d3028;color:#c9ded0;padding:9px 12px;font:9px 'IBM Plex Mono',monospace;letter-spacing:.08em;white-space:nowrap}.fullscreen-button:hover{background:#314a3c}@media(max-width:600px){.top-actions{gap:0}.fullscreen-button{font-size:8px;padding:8px}}

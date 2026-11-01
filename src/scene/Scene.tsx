@@ -1,7 +1,7 @@
 ﻿import { Canvas, useThree } from '@react-three/fiber'
-import { ContactShadows, OrthographicCamera } from '@react-three/drei'
+import { ContactShadows, OrbitControls, OrthographicCamera, PerspectiveCamera } from '@react-three/drei'
 import { useEffect } from 'react'
-import { OrthographicCamera as ThreeOrthographicCamera } from 'three'
+import { CatmullRomCurve3, OrthographicCamera as ThreeOrthographicCamera, Vector3 } from 'three'
 import type { SimulationState } from '../simulation/engine'
 
 export type CameraMode = 'workstation' | 'microscope'
@@ -17,7 +17,7 @@ function CameraRig({ mode, magnification }: { mode: CameraMode; magnification: n
       camera.lookAt(4, 0, 0)
       if (camera instanceof ThreeOrthographicCamera) camera.zoom = Math.min(size.width, size.height) / 7 * magnification
     } else {
-      camera.position.set(17, 19, 23)
+      camera.position.set(21, 20, 26)
       camera.up.set(0, 1, 0)
       camera.lookAt(0, 0, 0)
       if (camera instanceof ThreeOrthographicCamera) camera.zoom = Math.min(size.width, size.height) / 23
@@ -30,6 +30,10 @@ function CameraRig({ mode, magnification }: { mode: CameraMode; magnification: n
 const steel = '#89939a'
 const darkSteel = '#414b50'
 const ceramic = '#d2d0c5'
+const instrumentCable = new CatmullRomCurve3([
+  new Vector3(10.8,-1.75,-5.4), new Vector3(9.5,-1.74,-7),
+  new Vector3(5,-1.74,-7.6), new Vector3(3,-1.74,-6.5),
+])
 
 function Box({ position, size, color, metalness = 0, roughness = 0.5 }: { position: [number, number, number]; size: [number, number, number]; color: string; metalness?: number; roughness?: number }) {
   return <mesh position={position} castShadow receiveShadow>
@@ -41,6 +45,24 @@ function Screw({ x, z, y = 0.4 }: { x: number; z: number; y?: number }) {
   return <group position={[x, y, z]}>
     <mesh castShadow><cylinderGeometry args={[0.22, 0.22, 0.1, 24]} /><meshStandardMaterial color="#565e61" metalness={0.8} roughness={0.3} /></mesh>
     <Box position={[0, 0.06, 0]} size={[0.22, 0.02, 0.035]} color="#252d30" />
+  </group>
+}
+
+/** Workbench and instrumentation are visual context; the simulation owns all procedure decisions. */
+function Laboratory() {
+  return <group>
+    <Box position={[0,-2.2,0]} size={[38,0.7,27]} color="#9da8a7" metalness={0.38} roughness={0.55}/>
+    <Box position={[0,-2.6,0]} size={[38,0.15,27]} color="#657174" metalness={0.6} roughness={0.45}/>
+    <Box position={[0,3.3,-13.8]} size={[38,11,0.5]} color="#a6b0ad" metalness={0.05} roughness={0.8}/>
+    <Box position={[0,0.1,-13.45]} size={[38,0.18,0.35]} color="#6b7977" metalness={0.5} roughness={0.45}/>
+    {[ -11, 0, 11 ].map(x => <Box key={x} position={[x,3.3,-13.48]} size={[0.06,10.5,0.04]} color="#7e8b88" roughness={0.75}/>)}
+    {/* Compact controller, with modeled switches and knobs. Values remain in the UI. */}
+    <Box position={[13,-0.6,-5.2]} size={[4.1,2.15,3.2]} color="#556163" metalness={0.65} roughness={0.46}/>
+    <Box position={[13,-0.6,-3.56]} size={[3.8,1.85,0.12]} color="#303b3c" metalness={0.55} roughness={0.45}/>
+    <Box position={[12.45,-0.32,-3.48]} size={[1.65,0.57,0.04]} color="#4a5c57" metalness={0.2} roughness={0.65}/>
+    {[12.1,12.65,13.2].map(x => <Box key={x} position={[x,-1.05,-3.46]} size={[0.36,0.19,0.08]} color="#8f9a93" metalness={0.5} roughness={0.4}/>)}
+    <group position={[14.15,-0.47,-3.44]} rotation={[Math.PI/2,0,0]}><mesh castShadow><cylinderGeometry args={[0.42,0.42,0.16,40]}/><meshStandardMaterial color="#a1aaa5" metalness={0.8} roughness={0.3}/></mesh><mesh position={[0,0.1,0]}><cylinderGeometry args={[0.28,0.28,0.08,40]}/><meshStandardMaterial color="#35413f" metalness={0.5} roughness={0.5}/></mesh></group>
+    <mesh><tubeGeometry args={[instrumentCable,48,0.09,10,false]}/><meshStandardMaterial color="#292f30" roughness={0.72}/></mesh>
   </group>
 }
 
@@ -136,13 +158,16 @@ function Nozzle({ state }: { state: SimulationState }) {
 export function Scene({ state, camera, magnification, illumination }: SceneProps) {
   return <Canvas shadows dpr={[1, 2]} gl={{ antialias: true }} style={{ width: '100%', height: '100%' }}>
     <color attach="background" args={['#242c30']} />
-    <OrthographicCamera makeDefault position={[17, 19, 23]} near={0.1} far={120} />
+    {camera === 'workstation'
+      ? <PerspectiveCamera makeDefault position={[21, 20, 26]} fov={38} near={0.1} far={150} />
+      : <OrthographicCamera makeDefault position={[4,18,0]} near={0.1} far={120} />}
     <CameraRig mode={camera} magnification={magnification} />
+    {camera === 'workstation' && <OrbitControls makeDefault target={[0,0,0]} enablePan={false} minDistance={18} maxDistance={70} minPolarAngle={0.2} maxPolarAngle={1.48}/>}
     <ambientLight intensity={0.85 * illumination} />
     <hemisphereLight args={['#e9f1f2', '#54514a', 1.15]} />
     <directionalLight position={[-5, 16, 9]} intensity={2.5 * illumination} castShadow shadow-mapSize={[2048, 2048]} shadow-camera-left={-15} shadow-camera-right={15} shadow-camera-top={15} shadow-camera-bottom={-15} shadow-bias={-0.0001} />
     <directionalLight position={[10, 8, -8]} intensity={0.7} color="#d5e1e5" />
-    <Station />{camera === 'workstation' && <MicroscopeStand />}<Die state={state} /><Nozzle state={state} />
+    {camera === 'workstation' && <Laboratory />}<Station />{camera === 'workstation' && <MicroscopeStand />}<Die state={state} /><Nozzle state={state} />
     <ContactShadows position={[0, -1.82, 0]} opacity={0.3} scale={30} blur={2.2} far={4} />
   </Canvas>
 }

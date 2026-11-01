@@ -38,14 +38,16 @@ describe('hand gesture clutch', () => {
     expect(released.dx).toBe(0); expect(released.pinched).toBe(false)
     expect(sim.vacuum).toBe(true); expect(sim.die.attached).toBe(true)
   })
-  it('uses a raised little finger as a clutch while thumb and index keep holding a pen', () => {
-    const penHand = (raised: boolean, x=0) => { const p=hand(0.2,x); p[18]={x:.7+x,y:.55}; p[20]=raised ? {x:.7+x,y:.3} : {x:.7+x,y:.55}; return p }
-    let r=classifyGesture(initialGesture(),penHand(false),0,1,false,1,'pen')
-    expect(r.state.armed).toBe(true)
-    r=classifyGesture(r.state,penHand(true),10,1,false,1,'pen'); r=classifyGesture(r.state,penHand(true),130,1,false,1,'pen'); expect(r.pinched).toBe(true)
-    r=classifyGesture(r.state,penHand(true,.1),180,1,false,1,'pen'); expect(r.dx).not.toBe(0)
-    r=classifyGesture(r.state,penHand(false,.1),200,1,false,1,'pen'); expect(r.pinched).toBe(false); expect(r.dx).toBe(0)
-    r=classifyGesture(r.state,undefined,220,1,false,1,'pen'); r=classifyGesture(r.state,penHand(true,.2),400,1,false,1,'pen'); expect(r.pinched).toBe(false); expect(r.dx).toBe(0)
+  it('arms a held pen after a steady pause, follows it, and safely re-arms after loss', () => {
+    const pen=hand(0.2)
+    for (let i=17;i<=20;i++) pen[i]={x:NaN,y:NaN}
+    let r=classifyGesture(initialGesture(),pen,0,1,false,1,'pen')
+    r=classifyGesture(r.state,pen,349,1,false,1,'pen'); expect(r.pinched).toBe(false)
+    r=classifyGesture(r.state,pen,350,1,false,1,'pen'); expect(r.pinched).toBe(true)
+    r=classifyGesture(r.state,hand(0.2,.1),400,1,false,1,'pen'); expect(r.dx).not.toBe(0)
+    r=classifyGesture(r.state,undefined,420,1,false,1,'pen'); expect(r.dx).toBe(0)
+    r=classifyGesture(r.state,hand(0.2,.2),500,1,false,1,'pen'); expect(r.pinched).toBe(false); expect(r.dx).toBe(0)
+    r=classifyGesture(r.state,hand(0.2,.2),850,1,false,1,'pen'); expect(r.pinched).toBe(true)
   })
   it('normalizes pinch distance for hand size', () => {
     const points=hand(0.2); const scaled=points.map(p=>({x:p.x*0.5,y:p.y*0.5}))

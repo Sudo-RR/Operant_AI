@@ -29,18 +29,15 @@ Built for the hackathon with React, TypeScript, Vite, Three.js, React Three Fibe
 
 ## Hand control
 
-Click **Start camera** and allow camera access. A floating, mirrored preview stays visible when you scroll; use **Move left/right** to reposition it and **Hide/Show points** to toggle the hand landmark overlay. Tracking uses your thumb and fingers, not a physical pen; holding a pen may obscure landmarks. Pen grip is the default movement mode; select Pinch to use the original thumb/index clutch.
+Click **Start camera** and allow camera access. A floating, mirrored preview stays visible when you scroll; use **Move left/right** to reposition it and **Hide/Show points** to toggle the landmark overlay. The default assigns your right hand to X/Y and your left hand to height; use the **Position / pen hand** buttons to swap them. Keep both hands visible and apart. Green landmarks show the position hand; gold shows the height hand.
 
-- **Pen grip mode:** hold the pen with thumb and index, tuck the little finger to arm, then raise it to move XY. Tuck it again to stop without releasing vacuum. After tracking loss, tuck it before raising it again.
-- **Pinch mode:** open your thumb and index to arm, then pinch and move for XY. Release the pinch to stop without releasing vacuum.
-- Touch thumb and little finger with the other three fingers extended and hold for 1.4 seconds: toggle vacuum. Check the on-screen vacuum state and ensure the tool is at the intended height before releasing.
-- In pen grip, keep the little finger tucked and raise the middle and ring fingers for 1 second: switch view without releasing the pen. With an open grip, hold a two-finger V for 1 second to switch view.
-- Hold three fingers for 1 second: switch fine/coarse mode.
-- Hold a thumbs-up or thumbs-down pose: raise or lower Z in steps.
-- Point your index finger left or right with the other fingers curled: rotate in steps.
-- Hold index and little finger extended for 1 second: inspect.
+- **Position hand, pen grip:** hold the pen with thumb and index and hold the hand still briefly to arm. Move the hand to move X/Y; hold it still to stop. After tracking loss, hold still again before moving. The camera tracks the grip, not the pen; the pen can obscure landmarks.
+- **Position hand, pinch mode:** open thumb and index to arm, then pinch and move for X/Y. Release the pinch to stop.
+- **Height hand:** open thumb and index to arm, then pinch and move the hand up or down to adjust Z. Release to stop. Tracking loss stops the affected hand and requires a fresh clutch.
+- **Switch view:** hold a V with the position hand for one second. The on-screen view buttons remain available.
+- **Toggle vacuum:** hold a V with the height hand for 1.4 seconds, then relax it before another toggle. Check the on-screen vacuum state and tool height before releasing a die.
 
-Return to a neutral hand/pen grip for at least 0.3 seconds between action gestures. Loosen the pen grip for action gestures other than the pen-grip view switch. A pose needs a deliberate hold; the preview shows the recognized gesture and hold progress. Tracking loss or a pinch resets the action gesture; open your hand again before the next action. Select **Manual** to use positioning buttons and keyboard, or **Hand control** for hand positioning and action gestures. Vacuum and inspection buttons remain available in either mode. The sensitivity slider adjusts hand XY speed; Fine reduces movement, Z and rotation steps. The **Enable action gestures** checkbox disables the additional poses without disabling XY movement; when it is off, manual Z and rotation controls are also available in Hand control mode.
+Choose **Manual** to use positioning buttons and keyboard, or **Hand control** for X/Y and Z. View, vacuum, rotation, fine mode and inspection also remain available from the console. The sensitivity slider and Fine mode adjust hand motion sensitivity. **Full screen** expands the workspace; drag the workstation view to orbit and scroll over it to zoom.
 
 The webcam model and runtime are served locally. Frames and landmarks stay in the browser. Gesture recognition is approximate and can be affected by lighting, hand orientation and a pen blocking the fingers; inspect on-screen feedback and use manual controls if a gesture is not recognized. The webcam does not measure real-world micrometre movements. The microscope magnification and illumination sliders are simulated optical controls; the model and geometry are illustrative, not a certified instrument.
 
