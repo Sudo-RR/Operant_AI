@@ -1,4 +1,4 @@
-# Operant AI — Precision Die Placement
+# Operant AI â€” Precision Die Placement
 
 A browser-based industrial training simulation built for the DevDay Exchange Community Hackathon, London, 1 November 2026. Mission 001 guides a learner through a face-up semiconductor die transfer, alignment and placement on an illustrative non-conductive epoxy deposit.
 
@@ -21,7 +21,7 @@ Open the local URL printed by Vite. Run `npm test` for the deterministic simulat
 
 Use the on-screen controls or arrow keys for X/Y, W/S for Z, Q/E for rotation, V for vacuum, F to toggle fine control, C to switch camera, and I to inspect. All distances in the simulation are millimetres; inspection reports errors in micrometres.
 
-The scenario uses illustrative limits: pickup within 150 µm horizontally and 80 µm vertically; placement within ±50 µm on each axis, ±2° rotation, and ±30 µm release height. These are not manufacturer-certified limits. This geometric simulation does not predict adhesive curing, bond strength or industrial qualification.
+The scenario uses illustrative limits: pickup within 150 Âµm horizontally and 80 Âµm vertically; placement within Â±50 Âµm on each axis, Â±2Â° rotation, and Â±30 Âµm release height. These are not manufacturer-certified limits. This geometric simulation does not predict adhesive curing, bond strength or industrial qualification.
 
 ## Implementation and credits
 
