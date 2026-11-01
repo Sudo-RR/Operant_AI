@@ -36,4 +36,21 @@ describe('die placement procedure', () => {
     state = command(state, { type: 'vacuum', on: false });
     expect(state.result?.reason).toContain('rotation');
   });
+  it('requires an upright tool for pickup and locks tilt while carrying', () => {
+    let state = command(initialState(), {type:'tilt', x:5, y:-10});
+    state = command(state, {type:'move', dz:-2.5});
+    expect(command(state, {type:'vacuum', on:true}).message).toContain('upright');
+    state = command(state, {type:'tilt', upright:true});
+    state = command(state, {type:'vacuum', on:true});
+    expect(state.die.attached).toBe(true);
+    const locked = command(state, {type:'tilt', x:5});
+    expect(locked.tool.tiltX).toBe(0);
+    expect(locked.message).toContain('locked');
+  });
+  it('bounds pen tilt and resets it with the mission', () => {
+    const state = command(initialState(), {type:'tilt', x:100, y:-100});
+    expect(state.tool.tiltX).toBe(15);
+    expect(state.tool.tiltY).toBe(-15);
+    expect(command(state, {type:'reset'}).tool.tiltX).toBe(0);
+  });
 });

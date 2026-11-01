@@ -5,11 +5,13 @@ export const SCENARIO = {
   pickupRadius: 0.15, pickupHeightTolerance: 0.08,
   placementTolerance: 0.05, angleTolerance: 2, releaseHeightTolerance: 0.03,
 } as const;
+/** A sub-nanometre numerical guard in mm, for floating-point boundary comparisons. */
+export const COMPARISON_EPSILON_MM = 1e-9;
 
 export type Pose = { x: number; y: number; z: number; angle: number };
 export type Assessment = { passed: boolean; xErrorUm: number; yErrorUm: number; angleErrorDeg: number; reason: string };
 export type SimulationState = {
-  tool: Pose;
+  tool: Pose & { tiltX: number; tiltY: number };
   die: Pose & { attached: boolean };
   vacuum: boolean;
   phase: 'ready' | 'carrying' | 'placed';
@@ -19,13 +21,14 @@ export type SimulationState = {
 export type Command =
   | { type: 'move'; dx?: number; dy?: number; dz?: number }
   | { type: 'rotate'; degrees: number }
+  | { type: 'tilt'; x?: number; y?: number; upright?: boolean }
   | { type: 'vacuum'; on: boolean }
   | { type: 'inspect' }
   | { type: 'reset' };
 
 export function initialState(): SimulationState {
   return {
-    tool: { x: -4, y: 0, z: 3, angle: 0 },
+    tool: { x: -4, y: 0, z: 3, angle: 0, tiltX: 0, tiltY: 0 },
     die: { x: -4, y: 0, z: SCENARIO.surfaceZ, angle: 0, attached: false },
     vacuum: false, phase: 'ready', result: null,
     message: 'Position the nozzle over the die and lower it to contact height (0.50 mm).',
@@ -42,9 +45,9 @@ function assess(die: Pose): Assessment {
   const angle = normalAngle(die.angle);
   const height = die.z - SCENARIO.surfaceZ;
   const reasons: string[] = [];
-  if (Math.abs(height) > SCENARIO.releaseHeightTolerance) reasons.push(`release height ${Math.round(height * 1000)} µm above the surface exceeds ±${SCENARIO.releaseHeightTolerance * 1000} µm`);
-  if (Math.abs(x) > SCENARIO.placementTolerance * 1000 || Math.abs(y) > SCENARIO.placementTolerance * 1000) reasons.push(`X/Y offset exceeds ±${SCENARIO.placementTolerance * 1000} µm`);
-  if (Math.abs(angle) > SCENARIO.angleTolerance) reasons.push(`rotation exceeds ±${SCENARIO.angleTolerance}°`);
+  if (Math.abs(height) > SCENARIO.releaseHeightTolerance + COMPARISON_EPSILON_MM) reasons.push(`release height ${Math.round(height * 1000)} µm above the surface exceeds ±${SCENARIO.releaseHeightTolerance * 1000} µm`);
+  if (Math.abs(x) > (SCENARIO.placementTolerance + COMPARISON_EPSILON_MM) * 1000 || Math.abs(y) > (SCENARIO.placementTolerance + COMPARISON_EPSILON_MM) * 1000) reasons.push(`X/Y offset exceeds ±${SCENARIO.placementTolerance * 1000} µm`);
+  if (Math.abs(angle) > SCENARIO.angleTolerance + 1e-9) reasons.push(`rotation exceeds ±${SCENARIO.angleTolerance}°`);
   return { passed: reasons.length === 0, xErrorUm: x, yErrorUm: y, angleErrorDeg: angle,
     reason: reasons.length ? `Placement failed: ${reasons.join('; ')}.` : 'Placement within the illustrative geometric tolerances.' };
 }
@@ -60,6 +63,12 @@ export function applyCommand(state: SimulationState, command: Command): Simulati
     const die = state.die.attached ? { ...state.die, x: state.die.x + tool.x - state.tool.x, y: state.die.y + tool.y - state.tool.y, z: state.die.z + tool.z - state.tool.z } : state.die;
     return { ...state, tool, die };
   }
+  if (command.type === 'tilt') {
+    if (state.die.attached || state.vacuum) return { ...state, message: 'Tilt is locked while carrying a die.' };
+    const tiltX = command.upright ? 0 : clamp(state.tool.tiltX + safe(command.x), -15, 15);
+    const tiltY = command.upright ? 0 : clamp(state.tool.tiltY + safe(command.y), -15, 15);
+    return { ...state, tool: { ...state.tool, tiltX, tiltY }, message: tiltX || tiltY ? 'Tilt is illustrative. Return the empty tool upright before pickup.' : 'Tool upright. Position the nozzle over the die for pickup.' };
+  }
   if (command.type === 'rotate') {
     const tool = { ...state.tool, angle: normalAngle(state.tool.angle + safe(command.degrees)) };
     const radians = safe(command.degrees) * Math.PI / 180;
@@ -69,9 +78,10 @@ export function applyCommand(state: SimulationState, command: Command): Simulati
   if (command.on === state.vacuum) return state;
   if (command.on) {
     if (state.phase !== 'ready') return { ...state, message: 'Reset the mission to attempt another pickup.' };
+    if (state.tool.tiltX !== 0 || state.tool.tiltY !== 0) return { ...state, message: 'Pickup failed: return the tool upright before engaging vacuum.' };
     const distance = Math.hypot(state.tool.x - state.die.x, state.tool.y - state.die.y);
     const heightError = Math.abs(state.tool.z - (state.die.z + SCENARIO.dieThickness));
-    if (distance > SCENARIO.pickupRadius || heightError > SCENARIO.pickupHeightTolerance) {
+    if (distance > SCENARIO.pickupRadius + COMPARISON_EPSILON_MM || heightError > SCENARIO.pickupHeightTolerance + COMPARISON_EPSILON_MM) {
       return { ...state, message: `Pickup failed: nozzle offset ${(distance * 1000).toFixed(0)} µm, height error ${(heightError * 1000).toFixed(0)} µm. Limits are ${SCENARIO.pickupRadius * 1000} µm and ${SCENARIO.pickupHeightTolerance * 1000} µm.` };
     }
     return { ...state, vacuum: true, phase: 'carrying', die: { ...state.die, attached: true }, message: 'Die secured. Retract, transfer to the target and align under the microscope.' };
