@@ -5,7 +5,7 @@ import wasmBinary from '@mediapipe/tasks-vision/vision_wasm_internal.wasm?url'
 import type { Command } from '../simulation/engine'
 import { classifyGesture, initialGesture, type GestureState } from './gestureClassifier'
 
-const MODEL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task'
+const MODEL = `${import.meta.env.BASE_URL}models/hand_landmarker.task`
 type Status = 'off' | 'loading' | 'ready' | 'error'
 type Props = { send: (command: Command) => void; fine: boolean; active: boolean; setActive: (value: boolean) => void }
 export function HandControl({ send, fine, active, setActive }: Props) {
@@ -60,15 +60,16 @@ export function HandControl({ send, fine, active, setActive }: Props) {
       element.srcObject = stream
       await element.play()
       if (run !== generation.current) return
-      setMessage('Camera ready. Downloading hand model...')
+      setMessage('Camera ready. Loading local hand model...')
       const controller = new AbortController(); abortRef.current = controller
       const timeout = window.setTimeout(() => controller.abort(), 30000)
       let model: Uint8Array
       try {
         const response = await fetch(MODEL, { signal: controller.signal, credentials: 'omit' })
-        if (!response.ok) throw new Error(`Model download failed (HTTP ${response.status}).`)
+        if (!response.ok) throw new Error(`Local hand model could not be loaded (HTTP ${response.status}).`)
         model = new Uint8Array(await response.arrayBuffer())
-      } finally { window.clearTimeout(timeout); abortRef.current = null }
+        if (model.byteLength < 1_000_000) throw new Error('Local hand model is missing or incomplete. Reinstall or restore public/models/hand_landmarker.task.')
+      } finally { window.clearTimeout(timeout); if (abortRef.current === controller) abortRef.current = null }
       if (run !== generation.current) return
       setMessage('Initializing hand tracker...')
       const { HandLandmarker } = await import('@mediapipe/tasks-vision')
@@ -102,7 +103,7 @@ export function HandControl({ send, fine, active, setActive }: Props) {
       frameRef.current = requestAnimationFrame(loop)
     } catch (error) {
       if (run !== generation.current) return
-      const detail = error instanceof DOMException && error.name === 'NotAllowedError' ? 'Camera permission denied. Allow camera access in the browser site settings.' : error instanceof DOMException && error.name === 'AbortError' ? 'Hand model download timed out. Check your connection and retry.' : error instanceof Error ? error.message : 'Unable to start the camera.'
+      const detail = error instanceof DOMException && error.name === 'NotAllowedError' ? 'Camera permission denied. Allow camera access in the browser site settings.' : error instanceof DOMException && error.name === 'AbortError' ? 'Local hand model took too long to load. Check the app installation and retry.' : error instanceof Error ? error.message : 'Unable to start the camera.'
       cleanup(); resetGesture(); setActive(false); setStatus('error'); setMessage(detail)
     }
   }
@@ -113,7 +114,7 @@ export function HandControl({ send, fine, active, setActive }: Props) {
     <label className="sensitivity">HAND SENSITIVITY <strong>{sensitivity.toFixed(1)}×</strong><input type="range" min="0.3" max="2" step="0.1" value={sensitivity} onChange={e => setSensitivity(Number(e.target.value))} /></label>
     <div className="hand-preview" hidden={!visible}><video ref={video} muted playsInline /><div className={'hand-status ' + status} role="status">{message}</div></div>
     <div className="hand-indicators"><span>CAMERA: {status.toUpperCase()}</span><span>HAND: {tracked ? 'DETECTED' : 'NOT DETECTED'}</span><span>PINCH: {pinched ? 'ACTIVE' : 'INACTIVE'}</span><span>MODE: {fine ? 'FINE' : 'COARSE'} · {active && pinched ? 'HAND CONTROLLING' : active ? 'HAND ARMED' : 'MANUAL'}</span></div>
-    {!visible && <div className="hand-note">Camera stays off until started. The hand model downloads online; frames and landmarks stay in this browser.</div>}
+    {!visible && <div className="hand-note">Camera stays off until started. The hand model runs locally; frames and landmarks stay in this browser.</div>}
     {status === 'error' && <p className="hand-error">Stop and start the camera to retry. Manual controls remain available.</p>}
   </section>
 }
