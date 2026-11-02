@@ -13,6 +13,10 @@ npm run dev
 
 Open the local URL printed by Vite. Run `npm test` for the deterministic simulation tests and `npm run build` for a production build. No API key, webcam, database or cloud service is required for the standard controls.
 
+## GitHub Pages
+
+The deployment workflow builds and publishes pushes to `main`. In the repository's **Settings → Pages**, set **Source** to **GitHub Actions**. The site is served at `https://sudo-rr.github.io/Operant_AI/`. The Vite base path in `vite.config.ts` must match the repository name if the project is renamed or deployed elsewhere.
+
 ## Procedure
 
 1. Watch the illustrative adhesive dispensing sequence, or choose **Replay adhesive demo** before pickup. The nozzle begins above the source die. Lower its tip to **0.50 mm**, then turn vacuum on.

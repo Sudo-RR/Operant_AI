@@ -6,6 +6,8 @@ import type { SimulationState } from '../simulation/engine'
 import { SCENARIO } from '../simulation/engine'
 import { sampleDispense } from './adhesiveAnimation'
 
+const asset = (path: string) => `${import.meta.env.BASE_URL}assets/${path}`
+
 export type CameraMode = 'workstation' | 'microscope'
 export type TechnicianPosture = 'seated' | 'leaning'
 
@@ -47,7 +49,7 @@ function Box({ position, size, color, metalness = 0, roughness = 0.5 }: { positi
 }
 
 function LabBackdrop() {
-  const texture = useTexture('/assets/lab-panorama.png')
+  const texture = useTexture(asset('lab-panorama.png'))
   texture.colorSpace = SRGBColorSpace
   return <mesh><sphereGeometry args={[70,64,32]}/><meshBasicMaterial map={texture} side={BackSide} toneMapped={false}/></mesh>
 }
@@ -55,9 +57,9 @@ function LabBackdrop() {
 /** Brushed stainless maps from ambientCG Metal012, CC0. */
 function BrushedPlate() {
   const maps = useTexture({
-    map: '/assets/metal012/Metal012_1K-JPG_Color.jpg',
-    normalMap: '/assets/metal012/Metal012_1K-JPG_NormalGL.jpg',
-    roughnessMap: '/assets/metal012/Metal012_1K-JPG_Roughness.jpg',
+    map: asset('metal012/Metal012_1K-JPG_Color.jpg'),
+    normalMap: asset('metal012/Metal012_1K-JPG_NormalGL.jpg'),
+    roughnessMap: asset('metal012/Metal012_1K-JPG_Roughness.jpg'),
   })
   useMemo(() => {
     maps.map.colorSpace = SRGBColorSpace
@@ -272,7 +274,7 @@ function AdhesiveDispensing({ playing, cycle }: { playing: boolean; cycle: numbe
 
 /** Independent visual equipment on the neighboring bench; it does not control the simulated microscope. */
 function BenchMicroscope() {
-  const { scene } = useGLTF('/assets/industrial_microscope/industrial_microscope_1k.gltf')
+  const { scene } = useGLTF(asset('industrial_microscope/industrial_microscope_1k.gltf'))
   const model = useMemo(() => {
     const clone = scene.clone(true)
     clone.traverse(object => { if ('isMesh' in object) { object.castShadow = true; object.receiveShadow = true } })
@@ -344,7 +346,7 @@ function ProcedurePulse({ state }: { state: SimulationState }) {
 
 /** Decorative silicon metallization; its geometry does not affect the placement. */
 function DieSurface() {
-  const texture = useTexture('/assets/silicon-circuit.png')
+  const texture = useTexture(asset('silicon-circuit.png'))
   texture.colorSpace = SRGBColorSpace
   return <mesh position={[0,0.121,0]} rotation={[-Math.PI/2,0,0]}><planeGeometry args={[1.22,1.22]}/><meshStandardMaterial map={texture} metalness={0.48} roughness={0.38}/></mesh>
 }
